@@ -52,44 +52,6 @@ fn main() {
 
 ---
 
-## Conditional Trait Implementations
-
-You can implement a trait for your type, but only when certain conditions are met:
-
-```rust
-use std::fmt::Display;
-
-struct Pair<T> {
-    first: T,
-    second: T,
-}
-
-impl<T> Pair<T> {
-    fn new(first: T, second: T) -> Self {
-        Pair { first, second }
-    }
-}
-
-// Pair<T> implements Display ONLY IF T implements Display
-impl<T: Display> Display for Pair<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({}, {})", self.first, self.second)
-    }
-}
-
-fn main() {
-    let int_pair = Pair::new(1, 2);
-    println!("{}", int_pair);  // Works!
-    
-    let string_pair = Pair::new("hello", "world");
-    println!("{}", string_pair);  // Works!
-}
-```
-
-The `Display` for `Pair<T>` only "turns on" when `T` itself is `Display`. This is conditional implementation.
-
----
-
 ## Blanket Implementations
 
 The standard library uses this pattern extensively. For example:
@@ -222,6 +184,42 @@ fn main() {
     println!("{}", Player { name: String::from("Alice") });
 }
 ```
+
+If you need to implement a foreign trait for a foreign type (which the orphan rule prevents), you can use a **newtype** to create a "wrapper" type that you own. This acts as an adapter, allowing you to bridge the gap. For more on newtypes, see the [Newtypes chapter](../dop_fundamentals/05-newtypes.md) in the DOP Fundamentals section.
+
+### Newtypes as Orphan Rule Workarounds
+
+Here's how you can use a newtype to implement a foreign trait for a foreign type:
+
+```rust
+use std::fmt;
+
+// We can't implement Display for Vec<i32> directly (orphan rule)
+// But we can wrap it in a newtype!
+
+struct Comma<T>(Vec<T>);
+
+impl<T: fmt::Display> fmt::Display for Comma<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut first = true;
+        for item in &self.0 {
+            if !first {
+                write!(f, ", ")?;
+            }
+            write!(f, "{}", item)?;
+            first = false;
+        }
+        Ok(())
+    }
+}
+
+fn main() {
+    let numbers = Comma(vec![1, 2, 3, 4, 5]);
+    println!("{}", numbers);  // Output: 1, 2, 3, 4, 5
+}
+```
+
+The newtype acts as an adapter, giving you a local type that you can implement traits on.
 
 ---
 

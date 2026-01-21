@@ -28,6 +28,33 @@ impl Player {
 }
 ```
 
+In C#, static methods are often used because there are no free functions - everything must belong to a class. This leads to "static utility classes" that are really just namespaces for functions:
+
+```csharp
+// C# - static class as a container for functions
+public static class MathUtils {
+    public static double Lerp(double a, double b, double t) { ... }
+    public static double Clamp(double value, double min, double max) { ... }
+}
+```
+
+In Rust, the equivalent of a C# `static class` is simply a **module** (`mod`) with free functions and constants. Types should be containers for data (and highly related behavior), not just containers for behavior:
+
+```rust,noplayground
+// Rust - module with free functions
+mod math_utils {
+    pub fn lerp(a: f64, b: f64, t: f64) -> f64 {
+        a + (b - a) * t
+    }
+    
+    pub fn clamp(value: f64, min: f64, max: f64) -> f64 {
+        if value < min { min } else if value > max { max } else { value }
+    }
+}
+```
+
+Use associated functions on types when the function is **conceptually tied to the type itself** (like constructors, or type-specific utilities). Use free functions in modules when the behavior is more general-purpose or doesn't conceptually "belong" to a single type.
+
 ---
 
 ## The Self Parameter
