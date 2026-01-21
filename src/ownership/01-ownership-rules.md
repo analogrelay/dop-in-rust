@@ -104,12 +104,16 @@ fn main() {
     let point: (i32, i32) = (10, 20);
     let other = point;
     println!("{:?} and {:?}", point, other);  // Both valid
-    
-    // This is NOT Copy - owns heap data
+}
+```
+
+But `String` is NOT Copy - it owns heap data:
+
+```rust
+fn main() {
     let name = String::from("Alice");
     let other_name = name;
-    // println!("{}", name);  // ERROR: moved
-    println!("{}", other_name);
+    println!("{}", name);  // ERROR: borrow of moved value: `name`
 }
 ```
 
@@ -136,9 +140,27 @@ fn main() {
     };
     
     print_player(player);  // Ownership moves into the function
+}
+```
+
+After the call, `player` is no longer valid:
+
+```rust
+# struct Player {
+#     name: String,
+#     health: i32,
+# }
+# fn print_player(p: Player) {
+#     println!("{} has {} health", p.name, p.health);
+# }
+fn main() {
+    let player = Player {
+        name: String::from("Alice"),
+        health: 100,
+    };
     
-    // player is no longer valid here!
-    // print_player(player);  // ERROR: use of moved value
+    print_player(player);
+    print_player(player);  // ERROR: use of moved value: `player`
 }
 ```
 

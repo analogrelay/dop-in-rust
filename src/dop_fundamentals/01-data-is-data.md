@@ -8,7 +8,7 @@ In Rust, structs and enums describe data layout directly - no constructors, no h
 
 A struct is just named fields. No constructor runs, no base class is initialized.
 
-```rust
+```rust,noplayground
 struct Player {
     name: String,
     health: i32,
@@ -19,6 +19,12 @@ struct Player {
 Creating one is straightforward - just fill in the fields:
 
 ```rust
+# struct Player {
+#     name: String,
+#     health: i32,
+#     position: (f32, f32),
+# }
+#
 fn main() {
     let player = Player {
         name: String::from("Alice"),

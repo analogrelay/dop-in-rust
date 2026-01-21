@@ -1,12 +1,12 @@
-# Real-World DOP: Entity-Component-System
+# Entity-Component-System Pattern
 
-Data-Oriented Programming isn't just "how Rust works" - it's a design philosophy that powers high-performance systems. Let's see how it manifests in real codebases.
+Data-Oriented Programming isn't just "how Rust works" - it's a design philosophy that powers high-performance systems. The Entity-Component-System (ECS) pattern from game development is a pure expression of DOP. [Bevy](https://bevy.org), a popular Rust game engine, uses ECS as its core architecture. While this isn't a game design book, understanding ECS reveals how DOP principles apply in real-world scenarios beyond games.
 
 ---
 
 ## The OOP Instinct: Inheritance Hierarchies
 
-In C#, you might model game entities like this:
+In C#, you might model game entities with inheritance:
 
 ```csharp
 // C# approach: inheritance hierarchy
@@ -16,69 +16,40 @@ abstract class Entity {
 
 class Player : Entity { 
     public int Health { get; set; }
-    public void Move(Vector2 delta) { ... }
 }
 
 class Enemy : Entity, IDamageable { 
     public int Health { get; set; }
     public AI Brain { get; set; }
 }
-
-class Projectile : Entity { 
-    public int Damage { get; set; }
-    public Vector2 Velocity { get; set; }
-}
 ```
 
-This creates problems: What if something is both a Player AND has AI? What about a Projectile that has Health (destructible)?
+This creates problems: What if an Enemy needs to share behavior with Player? What about a destructible Projectile that has Health?
 
 ---
 
-## The DOP Alternative: Components as Data
+## The DOP Alternative: Composition Over Inheritance
 
-In DOP, we separate "what things are" from "what things have":
+In DOP, we separate "what things are" from "what things have". Entities are just IDs, and data lives in separate component storage:
 
-```rust
+```rust,noplayground
+use std::collections::HashMap;
+
 // Components are just data - no behavior, no hierarchy
+#[derive(Clone, Copy)]
 struct Position { x: f32, y: f32 }
-struct Velocity { dx: f32, dy: f32 }
-struct Health { current: i32, max: i32 }
-struct Damage { amount: i32 }
-struct AIBrain { state: AIState }
 
 #[derive(Clone, Copy)]
-enum AIState {
-    Idle,
-    Chasing,
-    Attacking,
-}
-```
+struct Velocity { dx: f32, dy: f32 }
 
-Entities are just IDs. They don't "contain" data - they're keys into component storage:
+#[derive(Clone, Copy)]
+struct Health { current: i32, max: i32 }
 
-```rust
 // An entity is just an identifier
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 struct Entity(u32);
-```
 
----
-
-## Storing Components Separately
-
-Components live in their own storage, indexed by entity:
-
-```rust
-use std::collections::HashMap;
-
-struct Position { x: f32, y: f32 }
-struct Velocity { dx: f32, dy: f32 }
-struct Health { current: i32, max: i32 }
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-struct Entity(u32);
-
-// Each component type has its own storage
+// Components stored separately, indexed by entity
 struct World {
     next_entity: u32,
     positions: HashMap<Entity, Position>,
@@ -102,30 +73,92 @@ impl World {
         entity
     }
 }
+```
 
+Entities gain capabilities by having components added - no inheritance needed.
+
+Games have large quantities of entities, with lots of varied components, which is why they use this "columnar" storage format (storing components in separate collections indexed by entity ID). This allows systems to work by iterating over these large arrays of data efficiently. They don't have to use locking to protect unrelated data, and they can use the CPU cache extremely efficiently because they are usually working with large contiguous arrays of data.
+
+---
+
+## Systems: Functions Over Data
+
+Behavior lives in *systems* - functions that operate on entities with specific components. In [Bevy](https://bevy.org), you declare what data your system needs via query parameters, and the framework fills them in automatically:
+
+```rust,ignore
+use bevy::prelude::*;
+
+// Components are simple structs marked with #[derive(Component)]
+#[derive(Component)]
+struct Position { x: f32, y: f32 }
+
+#[derive(Component)]
+struct Velocity { dx: f32, dy: f32 }
+
+#[derive(Component)]
+struct Health { current: i32, max: i32 }
+
+// Movement system: Query tells Bevy "give me all entities with Position AND Velocity"
+// Bevy automatically finds matching entities and calls this function
+fn movement_system(mut query: Query<(&mut Position, &Velocity)>, time: Res<Time>) {
+    for (mut pos, vel) in &mut query {
+        pos.x += vel.dx * time.delta_secs();
+        pos.y += vel.dy * time.delta_secs();
+    }
+}
+
+// Health regen: only needs entities with Health component
+fn health_regen_system(mut query: Query<&mut Health>) {
+    for mut health in &mut query {
+        if health.current < health.max {
+            health.current += 1;
+        }
+    }
+}
+
+// Startup system: runs once to spawn initial entities
+// Commands lets us create/destroy entities and add/remove components
+fn setup(mut commands: Commands) {
+    // Player: has position, velocity, and health - will move and regenerate
+    commands.spawn((
+        Position { x: 0.0, y: 0.0 },
+        Velocity { dx: 10.0, dy: 5.0 },
+        Health { current: 80, max: 100 },
+    ));
+    
+    // Enemy: has position, velocity, and health
+    commands.spawn((
+        Position { x: 100.0, y: 50.0 },
+        Velocity { dx: -5.0, dy: 0.0 },
+        Health { current: 50, max: 50 },
+    ));
+    
+    // Tree: only has position - won't move, can't be damaged
+    commands.spawn(Position { x: 50.0, y: 50.0 });
+}
+
+// The function signature IS the query - no manual filtering needed
+// Bevy inspects the function parameters and wires everything up
 fn main() {
-    let mut world = World::new();
-    
-    // Create a player: has position, velocity, and health
-    let player = world.spawn();
-    world.positions.insert(player, Position { x: 0.0, y: 0.0 });
-    world.velocities.insert(player, Velocity { dx: 0.0, dy: 0.0 });
-    world.healths.insert(player, Health { current: 100, max: 100 });
-    
-    // Create a projectile: has position and velocity, but no health
-    let projectile = world.spawn();
-    world.positions.insert(projectile, Position { x: 10.0, y: 5.0 });
-    world.velocities.insert(projectile, Velocity { dx: -1.0, dy: 0.0 });
-    // No health component - projectiles can't be damaged
-    
-    println!("Player at ({}, {})", 
-             world.positions[&player].x, 
-             world.positions[&player].y);
-    println!("Projectile at ({}, {})", 
-             world.positions[&projectile].x, 
-             world.positions[&projectile].y);
+    App::new()
+        .add_plugins(DefaultPlugins)
+        .add_systems(Startup, setup)
+        .add_systems(Update, (movement_system, health_regen_system))
+        .run();
 }
 ```
 
-Entities gain capabilities by having components added - no inheritance needed!
+The tree (with only `Position`) won't be matched by `movement_system`'s query because it requires *both* `Position` and `Velocity`. Also, the health system and the movement system can run in parallel because they touch completely distinct data. **The type system defines data access clearly and safely.**
 
+---
+
+## Why This Pattern Matters
+
+ECS demonstrates core DOP principles:
+
+1. **Data and behavior are separate** - Components are pure data, systems are pure functions
+2. **Composition over inheritance** - Capabilities come from having components, not from class hierarchies  
+3. **Clear data flow** - Systems declare exactly what they read and write
+4. **Parallelism-ready** - Systems touching different components can run in parallel
+
+Game engines like Bevy use ECS, but the pattern applies anywhere you have entities with varying capabilities - and as we'll see, similar thinking applies to request pipelines.

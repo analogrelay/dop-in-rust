@@ -17,7 +17,7 @@ fn main() {
         reference = &value;
     }  // value is dropped here
     
-    // println!("{}", reference);  // ERROR: `value` does not live long enough
+    println!("{}", reference);  // ERROR: `value` does not live long enough
 }
 ```
 
@@ -55,10 +55,14 @@ When the compiler sees a function that returns a reference, it asks: "How long i
 
 ```rust
 // This function returns a reference, but to what?
-// fn get_name() -> &str {
-//     let name = String::from("Alice");
-//     &name  // ERROR: returns reference to local variable
-// }
+// The compiler will emit an error here because it doesn't know where the &str comes from
+fn get_name() -> &str {
+    // Doesn't matter what we do here ...
+}
+
+fn main() {
+    println!("{}", get_name());
+}
 ```
 
 The compiler needs to prove the returned reference won't dangle. If it can't, it rejects the code.
@@ -117,7 +121,7 @@ You're telling the compiler: "I'm returning one of these two references, so the 
 
 You've been using lifetimes all along - the compiler infers them in common cases:
 
-```rust
+```rust,noplayground
 // You write:
 fn first_word(s: &str) -> &str { /* ... */ }
 
@@ -139,12 +143,17 @@ Sometimes the compiler can't infer the relationship:
 
 ```rust
 // Which input does the output come from?
-// fn pick_one(x: &str, y: &str) -> &str {
-//     if x.len() > 0 { x } else { y }
-// }
+fn pick_one(x: &str, y: &str) -> &str {
+    if x.len() > 0 { x } else { y }
+}
 // ERROR: missing lifetime specifier
 
-// We must be explicit:
+fn main() {}
+```
+
+We must be explicit:
+
+```rust
 fn pick_one<'a>(x: &'a str, y: &'a str) -> &'a str {
     if x.len() > 0 { x } else { y }
 }

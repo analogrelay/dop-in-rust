@@ -12,8 +12,9 @@
 # Ownership
 
 - [Ownership Rules](ownership/01-ownership-rules.md)
-- [Borrowing](ownership/02-borrowing.md)
-- [Data Structure Design](ownership/03-data-structure-design.md)
+- [Moves Are Free](ownership/02-moves-are-cheap.md)
+- [Borrowing](ownership/03-borrowing.md)
+- [Shared Ownership](ownership/04-shared-ownership.md)
 
 # Traits and Generics
 
@@ -33,5 +34,4 @@
 # Real-World DOP
 
 - [ECS Pattern](real_world_dop/01-ecs-pattern.md)
-- [Systems](real_world_dop/02-systems.md)
-- [Parallelism](real_world_dop/03-parallelism.md)
+- [HTTP Pipeline](real_world_dop/02-http-pipeline.md)

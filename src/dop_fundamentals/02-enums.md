@@ -2,9 +2,9 @@
 
 Rust enums are more powerful than C# enums. Each variant can hold different data.
 
-This is called an "algebraic data type" - something C# doesn't have natively.
+This is called an "algebraic data type" - something C# doesn't have natively... [yet](https://github.com/dotnet/csharplang/issues/9662).
 
-```rust
+```rust,noplayground
 enum GameEvent {
     PlayerJoined { name: String },
     PlayerMoved { x: f32, y: f32 },
@@ -22,6 +22,13 @@ Each variant is a distinct shape. `PlayerJoined` carries a name. `PlayerMoved` c
 Pattern matching destructures the data - no casting, no type checking at runtime:
 
 ```rust
+# enum GameEvent {
+#     PlayerJoined { name: String },
+#     PlayerMoved { x: f32, y: f32 },
+#     DamageTaken { amount: i32, source: String },
+#     PlayerDied,
+# }
+#
 fn main() {
     let event = GameEvent::DamageTaken {
         amount: 25,

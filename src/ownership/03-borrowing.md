@@ -46,8 +46,7 @@ struct Player {
 }
 
 fn try_to_damage(p: &Player) {
-    // p.health -= 10;  // ERROR: cannot assign to `p.health`, which is behind a `&` reference
-    println!("{} has {} health", p.name, p.health);
+    p.health -= 10;  // ERROR: cannot assign to `p.health`, which is behind a `&` reference
 }
 
 fn main() {
@@ -199,16 +198,28 @@ struct Player {
     health: i32,
 }
 
-// This won't compile - think about why
-// fn create_player() -> &Player {
-//     let p = Player { 
-//         name: String::from("Alice"), 
-//         health: 100 
-//     };
-//     &p  // ERROR: returns a reference to data owned by the current function
-// }
+fn create_player() -> &Player {
+    let p = Player { 
+        name: String::from("Alice"), 
+        health: 100 
+    };
+    &p  // ERROR: returns a reference to data owned by the current function
+}
 
-// Fix: return the owned value
+fn main() {
+    let player = create_player();
+    println!("{}", player.name);
+}
+```
+
+Fix: return the owned value:
+
+```rust
+struct Player {
+    name: String,
+    health: i32,
+}
+
 fn create_player() -> Player {
     Player { 
         name: String::from("Alice"), 

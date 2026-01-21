@@ -8,7 +8,7 @@ Let's explore common lifetime patterns and how to read and write them confidentl
 
 Lifetime syntax looks like generics, but for scopes:
 
-```rust
+```rust,noplayground
 fn example<'a>(x: &'a str) -> &'a str {
     x
 }
@@ -119,15 +119,24 @@ fn main() {
     
     {
         let novel = String::from("Call me Ishmael.");
-        // excerpt = Excerpt { text: &novel };  // ERROR!
-        // `novel` does not live long enough
+        excerpt = Excerpt { text: &novel };  // ERROR: `novel` does not live long enough
     }
     
     // If this compiled, excerpt.text would be a dangling reference
-    
-    // Correct: novel lives long enough
+    println!("{}", excerpt.text);
+}
+```
+
+Here's the correct version where the data lives long enough:
+
+```rust
+struct Excerpt<'a> {
+    text: &'a str,
+}
+
+fn main() {
     let novel = String::from("Call me Ishmael.");
-    excerpt = Excerpt { text: &novel };
+    let excerpt = Excerpt { text: &novel };
     println!("{}", excerpt.text);
 }
 ```
@@ -175,13 +184,21 @@ fn main() {
 ### Returning references to local data
 
 ```rust
-// Won't compile: can't return reference to local
-// fn create_string() -> &str {
-//     let s = String::from("hello");
-//     &s  // ERROR: returns reference to local variable
-// }
+// Can't return reference to local
+fn create_string() -> &str {
+    let s = String::from("hello");
+    &s  // ERROR: returns reference to local variable
+}
 
-// Fix: return owned data instead
+fn main() {
+    let s = create_string();
+    println!("{}", s);
+}
+```
+
+Fix: return owned data instead:
+
+```rust
 fn create_string() -> String {
     String::from("hello")
 }
@@ -206,12 +223,23 @@ fn main() {
     
     {
         let name = String::from("Alice");
-        // player = Player { name: &name };  // ERROR: `name` doesn't live long enough
+        player = Player { name: &name };  // ERROR: `name` doesn't live long enough
     }
     
-    // Fix: ensure name lives long enough
+    println!("Player: {}", player.name);
+}
+```
+
+Fix: ensure name lives long enough:
+
+```rust
+struct Player<'a> {
+    name: &'a str,
+}
+
+fn main() {
     let name = String::from("Alice");
-    player = Player { name: &name };
+    let player = Player { name: &name };
     println!("Player: {}", player.name);
 }
 ```

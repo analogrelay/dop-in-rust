@@ -26,9 +26,9 @@ public class Player {
 }
 ```
 
-**In DOP**: Data describes *what things are*. Behavior describes *what things do*.
+**In DOP**: Data describes *what things are*. Behavior describes *what things do*, and these are separate by design.
 
-```rust
+```rust,noplayground
 // Data: what a Player IS
 struct Player {
     health: i32,
@@ -38,7 +38,7 @@ struct Player {
 
 The struct just defines the shape of the data - nothing more. No constructors run, no base classes initialize.
 
-```rust
+```rust,noplayground
 // Behavior: what a Player DOES
 impl Player {
     fn new(name: String) -> Player {
@@ -51,9 +51,21 @@ impl Player {
 }
 ```
 
-The `impl` block adds behavior separately. Notice how `&mut self` makes mutation explicit.
+The `impl` block adds behavior separately. Notice how `&mut self` is very explicit syntax, indicating we accept a mutable reference to self as a parameter.
 
 ```rust
+# struct Player {
+#     health: i32,
+#     name: String,
+# }
+# impl Player {
+#     fn new(name: String) -> Player {
+#         Player { health: 100, name }
+#     }
+#     fn take_damage(&mut self, amount: i32) {
+#         self.health -= amount;
+#     }
+# }
 fn main() {
     let mut player = Player::new(String::from("Alice"));
     println!("Starting health: {}", player.health);
@@ -70,7 +82,7 @@ fn main() {
 This separation is **intentional**. It enables:
 
 - **Composability**: Behavior can be added to types after the fact. Data can be combined with other data without worrying about how behaviors conflict.
-- **Testability**: Data is transparent and inspectable
+- **Testability**: Data is transparent and inspectable. Most behaviors transform data with minimal (or even no) side-effects.
 - **Performance**: Data layout can be optimized independently of behavior
 
 Rust's "restrictions" (ownership, borrowing, lifetimes) are **natural consequences** of thinking about data first.

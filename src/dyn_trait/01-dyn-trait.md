@@ -142,34 +142,57 @@ When you call `shape.draw()`, the runtime looks up the function in the vtable. T
 Dynamic dispatch has real overhead:
 
 ```rust
+use std::time::Instant;
+
 trait Processable {
-    fn process(&self) -> i32;
+    fn process(&self) -> i64;
 }
 
-struct Data { value: i32 }
+struct Data { value: i64 }
 impl Processable for Data {
-    fn process(&self) -> i32 { self.value * 2 }
+    fn process(&self) -> i64 { self.value * 2 }
 }
 
 // Static dispatch - compiler inlines this
-fn process_static<T: Processable>(items: &[T]) -> i32 {
+fn process_static<T: Processable>(items: &[T]) -> i64 {
     items.iter().map(|x| x.process()).sum()
 }
 
 // Dynamic dispatch - vtable lookup each iteration
-fn process_dynamic(items: &[Box<dyn Processable>]) -> i32 {
+fn process_dynamic(items: &[Box<dyn Processable>]) -> i64 {
     items.iter().map(|x| x.process()).sum()
 }
 
 fn main() {
-    let data: Vec<Data> = vec![Data { value: 1 }, Data { value: 2 }];
-    println!("Static: {}", process_static(&data));
+    // Size difference
+    println!("Size of Data: {} bytes", std::mem::size_of::<Data>());
+    println!("Size of Box<dyn Processable>: {} bytes (pointer + vtable pointer)", 
+             std::mem::size_of::<Box<dyn Processable>>());
+    println!();
+
+    // Create test data
+    let data: Vec<Data> = (0..100_000).map(|i| Data { value: i }).collect();
+    let boxed: Vec<Box<dyn Processable>> = (0..100_000)
+        .map(|i| Box::new(Data { value: i }) as Box<dyn Processable>)
+        .collect();
     
-    let boxed: Vec<Box<dyn Processable>> = vec![
-        Box::new(Data { value: 1 }), 
-        Box::new(Data { value: 2 })
-    ];
-    println!("Dynamic: {}", process_dynamic(&boxed));
+    // Benchmark static dispatch
+    let start = Instant::now();
+    let mut result = 0;
+    for _ in 0..100 {
+        result = process_static(&data);
+    }
+    let static_time = start.elapsed();
+    println!("Static dispatch:  {:?} (result: {})", static_time, result);
+    
+    // Benchmark dynamic dispatch  
+    let start = Instant::now();
+    let mut result = 0;
+    for _ in 0..100 {
+        result = process_dynamic(&boxed);
+    }
+    let dynamic_time = start.elapsed();
+    println!("Dynamic dispatch: {:?} (result: {})", dynamic_time, result);
 }
 ```
 
@@ -208,7 +231,9 @@ fn main() {
 }
 ```
 
-The compiler tells you when a trait isn't object-safe.
+Essentially, any method that requires concrete knowledge of the type at compile time makes the trait non-object-safe. Returning `Self` requires that the compiler know how big the return type is. Generic methods require recompiling code for each possible type parameter (impossible when we don't know the type at runtime). Trait objects are inherently unsized, so requiring `Self: Sized` is a contradiction. Object-safe traits must look a lot like interfaces in C#, which are **always** object-safe.
+
+The compiler tells you when a trait isn't object-safe if you try to make a `dyn` pointer to it. If you want to use such a trait as a trait object, you'll need to redesign it.
 
 ---
 
@@ -228,6 +253,7 @@ trait Plugin {
 }
 
 struct PluginManager {
+    #[allow(dead_code)]
     plugins: Vec<Box<dyn Plugin>>,  // Unknown plugins loaded at runtime
 }
 
@@ -253,6 +279,7 @@ impl Drawable for Circle {
 }
 
 // Bad: unnecessary dynamic dispatch
+#[allow(dead_code)]
 fn draw_bad(shape: &dyn Drawable) {
     shape.draw();
 }
@@ -264,7 +291,6 @@ fn draw_good<T: Drawable>(shape: &T) {
 
 fn main() {
     let c = Circle { radius: 1.0 };
-    draw_bad(&c);   // Works, but slower
     draw_good(&c);  // Works, faster
 }
 ```
