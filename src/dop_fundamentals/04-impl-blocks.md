@@ -45,8 +45,13 @@ In Rust, the equivalent of a C# `static class` is simply a **module** (`mod`) wi
 ```rust,noplayground
 // Rust - module with free functions
 mod math_utils {
-    pub fn lerp(a: f64, b: f64, t: f64) -> f64 { ... }
-    pub fn clamp(value: f64, min: f64, max: f64) -> f64 { ... }
+    pub fn lerp(a: f64, b: f64, t: f64) -> f64 {
+        a + (b - a) * t
+    }
+    
+    pub fn clamp(value: f64, min: f64, max: f64) -> f64 {
+        if value < min { min } else if value > max { max } else { value }
+    }
 }
 ```
 

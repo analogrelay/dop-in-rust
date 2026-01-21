@@ -198,41 +198,47 @@ Good use cases for newtypes:
 
 - **Distinct IDs**: `UserId`, `OrderId`, `SessionId` - prevent mixing different kinds of IDs
 - **Units**: `Meters`, `Seconds`, `Bytes` - encode units in the type system
-- **Validation**: Wrap types that should only be constructed through validation
+- **Validation**: Wrap types that should only be constructed through validation (by keeping the inner field private)
 - **Semantic meaning**: `Email`, `PhoneNumber`, `Url` - more expressive than `String`
 - **Orphan rule workaround**: Implement foreign traits for foreign types
 
 ```rust
-struct Email(String);
+pub struct Email(String);  // Private field - can't construct directly
 
 impl Email {
-    fn new(email: String) -> Option<Self> {
+    pub fn new(email: String) -> Option<Self> {
         if email.contains('@') {
             Some(Email(email))
         } else {
             None
         }
     }
+    
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
 }
 
-fn send_email(email: Email) {
-    println!("Sending to: {}", email.0);
+fn send_email(email: &Email) {
+    println!("Sending to: {}", email.as_str());
 }
 
 fn main() {
     if let Some(email) = Email::new(String::from("alice@example.com")) {
-        send_email(email);  // Can only pass validated emails!
+        send_email(&email);  // Can only pass validated emails!
     }
     
-    // send_email(Email(String::from("invalid")));  // Can't create directly without validation
+    // Email(String::from("invalid"));  // ERROR: tuple struct constructor is private
 }
 ```
+
+By keeping the inner field private (the default for tuple struct fields when declared in a module), you ensure that `Email` can only be created through the `new` constructor, which validates the input.
 
 ---
 
 ## Transparent Newtypes
 
-Sometimes you want the newtype to "inherit" the traits of the inner type automatically. You can use the `#[repr(transparent)]` attribute:
+Sometimes you want the newtype to have the exact same memory layout as the inner type. The `#[repr(transparent)]` attribute guarantees this:
 
 ```rust
 #[repr(transparent)]
@@ -240,11 +246,13 @@ struct Seconds(f64);
 
 fn main() {
     let time = Seconds(3.14);
-    // The memory layout is identical to f64
+    // The memory layout is guaranteed to be identical to f64
 }
 ```
 
-This is useful for FFI (Foreign Function Interface) where you need to guarantee the memory layout matches the inner type, while still having a distinct type in Rust.
+This attribute ensures that the newtype has the same memory representation as its inner type, enabling safe transmutation between them. This is particularly useful for FFI (Foreign Function Interface) where you need to pass Rust types to C functions but want the type safety of newtypes in your Rust code.
+
+Without `#[repr(transparent)]`, the compiler might add padding or change the layout. With it, you're guaranteed that `Seconds` and `f64` are layout-compatible.
 
 ---
 
