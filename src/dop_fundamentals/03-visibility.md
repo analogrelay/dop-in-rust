@@ -29,6 +29,12 @@ The visibility modifiers map like this:
 | `internal` | `pub(crate)` | Same crate |
 | `public` | `pub` | Everyone |
 
+However, this table is somewhat misleading - Rust's visibility modifiers really aren't like C#'s. In C#, visibility is tied to classes and assemblies. In Rust, visibility is based almost exclusively on **modules**. The default is module-private, and `pub` makes things visible outside the module.
+
+The `pub(crate)` modifier is somewhat of an escape hatch for situations where you can't easily express visibility using just the module hierarchy. In practice, if you have internal APIs that should be visible across your crate but not exported publicly, it's often better to organize them into a private module in your crate and export the necessary APIs as `pub` from that module, rather than liberally using `pub(crate)` everywhere.
+
+Think about visibility in terms of module boundaries first, and your public API surface in `lib.rs` at the top.
+
 ---
 
 ## Module-Private vs Class-Private

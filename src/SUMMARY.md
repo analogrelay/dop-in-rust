@@ -8,6 +8,7 @@
 - [Enums](dop_fundamentals/02-enums.md)
 - [Visibility](dop_fundamentals/03-visibility.md)
 - [Impl Blocks](dop_fundamentals/04-impl-blocks.md)
+- [Newtypes](dop_fundamentals/05-newtypes.md)
 
 # Ownership
 

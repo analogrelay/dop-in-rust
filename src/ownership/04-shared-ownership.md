@@ -179,7 +179,7 @@ fn main() {
 
 `lock()` blocks until you have exclusive access. The lock is released when the guard is dropped.
 
-**NOTE**: Unlike C# locks, Rust locks wrap the data itself. This ensures that you must hold the lock to access the data and that the lock will automatically be released when you're done. This is possible in Rust due to the ownership model. The ownership model makes your code clearer and safer.
+**NOTE**: Unlike in C#, locks in Rust wrap the data to be protected by the lock. This ensures that you must hold the lock to access the data and that the lock will automatically be released when you're done.
 
 ---
 

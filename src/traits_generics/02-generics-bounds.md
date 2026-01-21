@@ -70,6 +70,8 @@ And for `apply_explosion(&mut crate1, 50)`, it generates a separate version for 
 
 This is **monomorphization**: the generic function becomes multiple specialized functions at compile time. No runtime overhead!
 
+In more formal terms, monomorphization is the transformation of a **polymorphic** type or function (one that works with many types) into several **monomorphic** variants (each specialized for a single concrete type). The polymorphic generic code you write gets "instantiated" into monomorphic code for each type you actually use it with.
+
 ---
 
 ## Multiple Trait Bounds
