@@ -1,0 +1,5 @@
+[book]
+authors = ["Ashley Stanton-Nurse"]
+language = "en"
+src = "src"
+title = "Data-Oriented Programming in Rust"

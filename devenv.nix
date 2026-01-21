@@ -4,5 +4,5 @@
   claude.code.enable = true;
   languages.dotnet.enable = true;
   languages.rust.enable = true;
-  packages = [ pkgs.asciinema pkgs.mdBook ];
+  packages = [ pkgs.asciinema pkgs.mdbook ];
 }
