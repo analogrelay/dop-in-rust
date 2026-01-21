@@ -1,6 +1,6 @@
 # Newtypes
 
-A **newtype** is a single-field tuple struct that wraps another type. It's one of Rust's most powerful patterns for creating richer, more expressive types.
+A **newtype** ([a term that originates from the Haskell functional programming language](https://wiki.haskell.org/Newtype)) is a single-field tuple struct that wraps another type. It's one of Rust's most powerful patterns for creating richer, more expressive types.
 
 ```rust
 struct UserId(u64);
