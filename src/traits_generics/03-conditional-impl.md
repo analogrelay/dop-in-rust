@@ -187,6 +187,40 @@ fn main() {
 
 If you need to implement a foreign trait for a foreign type (which the orphan rule prevents), you can use a **newtype** to create a "wrapper" type that you own. This acts as an adapter, allowing you to bridge the gap. For more on newtypes, see the [Newtypes chapter](../dop_fundamentals/05-newtypes.md) in the DOP Fundamentals section.
 
+### Newtypes as Orphan Rule Workarounds
+
+Here's how you can use a newtype to implement a foreign trait for a foreign type:
+
+```rust
+use std::fmt;
+
+// We can't implement Display for Vec<i32> directly (orphan rule)
+// But we can wrap it in a newtype!
+
+struct Comma<T>(Vec<T>);
+
+impl<T: fmt::Display> fmt::Display for Comma<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut first = true;
+        for item in &self.0 {
+            if !first {
+                write!(f, ", ")?;
+            }
+            write!(f, "{}", item)?;
+            first = false;
+        }
+        Ok(())
+    }
+}
+
+fn main() {
+    let numbers = Comma(vec![1, 2, 3, 4, 5]);
+    println!("{}", numbers);  // Output: 1, 2, 3, 4, 5
+}
+```
+
+The newtype acts as an adapter, giving you a local type that you can implement traits on.
+
 ---
 
 ## Real-World Example: Debug and Clone

@@ -73,6 +73,8 @@ The `.0` syntax accesses the first (and only) field of the tuple struct.
 Newtypes are a **zero-cost abstraction** - they exist only at compile time for type checking. At runtime, they compile down to the inner type with no overhead:
 
 ```rust
+use std::mem::size_of;
+
 struct Meters(f64);
 struct Seconds(f64);
 
@@ -82,6 +84,10 @@ fn main() {
     
     // At runtime, these are just f64 values
     // No wrapper, no indirection, no cost
+    println!("Size of f64: {} bytes", size_of::<f64>());
+    println!("Size of Meters: {} bytes", size_of::<Meters>());
+    println!("Size of Seconds: {} bytes", size_of::<Seconds>());
+    // All print: 8 bytes
 }
 ```
 
@@ -94,30 +100,41 @@ This means you get type safety without sacrificing performance.
 Newtypes are full-fledged types, so you can implement methods and traits on them:
 
 ```rust
-struct Temperature(f64);
+struct Celsius(f64);
+struct Fahrenheit(f64);
 
-impl Temperature {
-    fn new(celsius: f64) -> Self {
-        Temperature(celsius)
+impl Celsius {
+    fn new(temp: f64) -> Self {
+        Celsius(temp)
     }
     
-    fn to_fahrenheit(&self) -> f64 {
-        self.0 * 9.0 / 5.0 + 32.0
+    fn into_fahrenheit(self) -> Fahrenheit {
+        Fahrenheit(self.0 * 9.0 / 5.0 + 32.0)
+    }
+}
+
+impl Fahrenheit {
+    fn new(temp: f64) -> Self {
+        Fahrenheit(temp)
     }
     
-    fn is_freezing(&self) -> bool {
-        self.0 <= 0.0
+    fn into_celsius(self) -> Celsius {
+        Celsius((self.0 - 32.0) * 5.0 / 9.0)
     }
 }
 
 fn main() {
-    let temp = Temperature::new(-5.0);
-    println!("{}°C = {}°F", temp.0, temp.to_fahrenheit());
-    println!("Freezing? {}", temp.is_freezing());
+    let temp_c = Celsius::new(-5.0);
+    let temp_f = temp_c.into_fahrenheit();
+    println!("-5°C = {}°F", temp_f.0);
+    
+    let temp_f2 = Fahrenheit::new(98.6);
+    let temp_c2 = temp_f2.into_celsius();
+    println!("98.6°F = {}°C", temp_c2.0);
 }
 ```
 
-This lets you attach domain-specific logic directly to your types.
+This lets you attach domain-specific logic directly to your types, and prevents mixing different units.
 
 ---
 
@@ -154,44 +171,6 @@ fn main() {
 
 ---
 
-## The Orphan Rule and Newtypes
-
-One powerful use of newtypes is working around the **orphan rule**. Remember, you can only implement a trait if you own either the trait or the type. What if you want to implement a foreign trait for a foreign type?
-
-Use a newtype to create a local type that wraps the foreign type:
-
-```rust
-use std::fmt;
-
-// We can't implement Display for Vec<i32> directly (orphan rule)
-// But we can wrap it in a newtype!
-
-struct Comma<T>(Vec<T>);
-
-impl<T: fmt::Display> fmt::Display for Comma<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut first = true;
-        for item in &self.0 {
-            if !first {
-                write!(f, ", ")?;
-            }
-            write!(f, "{}", item)?;
-            first = false;
-        }
-        Ok(())
-    }
-}
-
-fn main() {
-    let numbers = Comma(vec![1, 2, 3, 4, 5]);
-    println!("{}", numbers);  // Output: 1, 2, 3, 4, 5
-}
-```
-
-The newtype acts as an adapter, giving you a local type that you can implement traits on.
-
----
-
 ## When to Use Newtypes
 
 Good use cases for newtypes:
@@ -200,39 +179,7 @@ Good use cases for newtypes:
 - **Units**: `Meters`, `Seconds`, `Bytes` - encode units in the type system
 - **Validation**: Wrap types that should only be constructed through validation (by keeping the inner field private)
 - **Semantic meaning**: `Email`, `PhoneNumber`, `Url` - more expressive than `String`
-- **Orphan rule workaround**: Implement foreign traits for foreign types
-
-```rust
-pub struct Email(String);  // Private field - can't construct directly
-
-impl Email {
-    pub fn new(email: String) -> Option<Self> {
-        if email.contains('@') {
-            Some(Email(email))
-        } else {
-            None
-        }
-    }
-    
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
-fn send_email(email: &Email) {
-    println!("Sending to: {}", email.as_str());
-}
-
-fn main() {
-    if let Some(email) = Email::new(String::from("alice@example.com")) {
-        send_email(&email);  // Can only pass validated emails!
-    }
-    
-    // Email(String::from("invalid"));  // ERROR: tuple struct constructor is private
-}
-```
-
-By keeping the inner field private (the default for tuple struct fields when declared in a module), you ensure that `Email` can only be created through the `new` constructor, which validates the input.
+- **Orphan rule workaround**: Implement foreign traits for foreign types (we'll talk about that later)
 
 ---
 
