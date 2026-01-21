@@ -28,8 +28,6 @@ impl Player {
 }
 ```
 
-### Associated Functions vs C# Static Methods
-
 In C#, static methods are often used because there are no free functions - everything must belong to a class. This leads to "static utility classes" that are really just namespaces for functions:
 
 ```csharp

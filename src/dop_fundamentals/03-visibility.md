@@ -21,17 +21,11 @@ mod game {
 }
 ```
 
-The visibility modifiers map like this:
+Rust's visibility modifiers work very differently from C#'s. In C#, visibility is tied to classes and assemblies (`private`, `internal`, `public`). In Rust, visibility is based almost exclusively on **modules**.
 
-| C# | Rust | Visible to... |
-| --- | --- | --- |
-| `private` | *(default)* | Same module (and child modules) |
-| `internal` | `pub(crate)` | Same crate |
-| `public` | `pub` | Everyone |
+The default in Rust is **module-private** - items are visible within their module and any child modules. Adding `pub` makes an item visible outside its module. This is fundamentally different from C#'s class-based privacy model.
 
-However, this table is somewhat misleading - Rust's visibility modifiers really aren't like C#'s. In C#, visibility is tied to classes and assemblies. In Rust, visibility is based almost exclusively on **modules**. The default is module-private, and `pub` makes things visible outside the module.
-
-The `pub(crate)` modifier is somewhat of an escape hatch for situations where you can't easily express visibility using just the module hierarchy. In practice, if you have internal APIs that should be visible across your crate but not exported publicly, it's often better to organize them into a private module in your crate and export the necessary APIs as `pub` from that module, rather than liberally using `pub(crate)` everywhere.
+Rust also has `pub(crate)`, which makes items visible throughout the current crate but not to external crates. However, this is somewhat of an escape hatch for situations where you can't easily express visibility using just the module hierarchy. In practice, if you have internal APIs that should be visible across your crate but not exported publicly, it's often better to organize them into a private module in your crate and export the necessary APIs as `pub` from that module, rather than liberally using `pub(crate)` everywhere.
 
 Think about visibility in terms of module boundaries first, and your public API surface in `lib.rs` at the top.
 
