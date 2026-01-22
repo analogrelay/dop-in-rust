@@ -210,6 +210,7 @@ async fn download_and_process(url: &str) -> Result<String, String> {
 }
 
 async fn download(_url: &str) -> Result<String, String> {
+    // Simplified example - real implementation would use the URL
     Ok("downloaded".to_string())
 }
 
@@ -243,9 +244,9 @@ fn print_many<T: std::fmt::Display>(items: &[T]) {
 }
 
 fn main() {
-    print_many(&[1, 2, 3]);           // Generates print_many::<i32>
-    print_many(&["a", "b", "c"]);     // Generates print_many::<&str>
-    print_many(&[1.5, 2.5, 3.5]);     // Generates print_many::<f64>
+    print_many(&[1, 2, 3]);           // Compiler generates print_many::<i32>
+    print_many(&["a", "b", "c"]);     // Compiler generates print_many::<&str>
+    print_many(&[1.5, 2.5, 3.5]);     // Compiler generates print_many::<f64>
 }
 ```
 
