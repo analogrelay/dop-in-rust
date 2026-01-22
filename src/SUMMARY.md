@@ -21,6 +21,7 @@
 
 - [Traits](traits_generics/01-traits.md)
 - [Generics and Bounds](traits_generics/02-generics-bounds.md)
+- [Zero-Cost Abstraction](traits_generics/04-zero-cost-abstraction.md)
 - [Conditional Impl](traits_generics/03-conditional-impl.md)
 
 # Lifetimes
